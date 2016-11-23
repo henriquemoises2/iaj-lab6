@@ -63,8 +63,8 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
             //    Backpropagate(nextNode, reward);
             //}
 
-            this.InitialNode.Action = this.CurrentStateWorldModel.GetExecutableActions()[RandomGenerator.Next(0, this.CurrentStateWorldModel.GetExecutableActions().Length - 1)];
-            Debug.Log(this.InitialNode.Action.ToString());
+            //this.InitialNode.Action = this.CurrentStateWorldModel.GetExecutableActions()[RandomGenerator.Next(0, this.CurrentStateWorldModel.GetExecutableActions().Length - 1)];
+            //Debug.Log(this.InitialNode.Action.ToString());
         }
 
         public GOB.Action Run()
@@ -91,24 +91,19 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
 
         private MCTSNode Selection(MCTSNode initialNode)
         {
-            GOB.Action nextAction;
+            // GOB.Action nextAction;
             MCTSNode currentNode = initialNode;
-            //MCTSNode bestChild;
 
-            while( currentNode != null)
+            while (!currentNode.State.IsTerminal())
             {
-                if (currentNode.ChildNodes.Count != 0)
+                foreach (var action in currentNode.State.GetExecutableActions())
                 {
-                    
-                    nextAction = currentNode.Action;
-                    return Expand(currentNode,nextAction);
+                    Expand(currentNode, action);
                 }
-                else
-                {
-                    currentNode = BestChild(currentNode);
-                }
+                currentNode = BestUCTChild(currentNode);
             }
             return currentNode;
+                
         }
 
         private Reward Playout(WorldModel initialPlayoutState)
@@ -141,38 +136,46 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
             MCTSNode parentNodeCopy = parent;
             action.ApplyActionEffects(parentNodeCopy.State);
             MCTSNode child = new MCTSNode(parentNodeCopy.State);
-            parent.ChildNodes.Add(parentNodeCopy);
-            this.BestActionSequence.Add(action);
-            return parentNodeCopy;
-
+            child.Parent = parent;
+            parent.ChildNodes.Add(child);
+            return child;
         }
 
         //gets the best child of a node, using the UCT formula
         private MCTSNode BestUCTChild(MCTSNode node)
         {
-            //TODO: implement
-            throw new NotImplementedException();
+            MCTSNode bestChild = node.ChildNodes[0];
+            double UCTValue, MaxUCTValue = 0;
+            foreach (MCTSNode child in node.ChildNodes)
+            {
+                UCTValue = child.State.GetScore() + C * Math.Sqrt(Math.Log((node.N != 0 ? node.N : 0)/ node.Parent.N != 0 ? node.Parent.N : 0); // Hammered because couldn't figure out how a node was already visited
+
+                if(UCTValue > MaxUCTValue)
+                {
+                    bestChild = child;
+                }                
+            }
+            return bestChild;
         }
 
         //this method is very similar to the bestUCTChild, but it is used to return the final action of the MCTS search, and so we do not care about
         //the exploration factor
         private MCTSNode BestChild(MCTSNode node)
         {
-            float max = 0;
-            MCTSNode retChild = node;
+            //float max = 0;
+            //MCTSNode retChild = node;
 
-            Debug.Log(node.ChildNodes.ToString());
-
-            foreach (MCTSNode child in node.ChildNodes) {
-                if (child.Q >= max)
-                {
-                    max = child.Q;
-                    retChild = child;
-                    Debug.Log(child.ToString());
-                }
-            }
-            Debug.Log(retChild.ToString());
-            return retChild;
+            //foreach (MCTSNode child in node.ChildNodes) {
+            //    if (child.Q > max)
+            //    {
+            //        max = child.Q;
+            //        retChild = child;
+            //        Debug.Log(child.ToString());
+            //    }
+            //}
+            //Debug.Log(retChild.ToString());
+            //return retChild;
+            throw new NotImplementedException();
         }
     }
 }

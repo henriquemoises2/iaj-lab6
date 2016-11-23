@@ -16,7 +16,12 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
         public MCTSNode(WorldModel state)
         {
             this.State = state;
+            this.Parent = null;
+            this.Action = null;
+            this.PlayerID = 0;
             this.ChildNodes = new List<MCTSNode>();
+            this.N = 0;
+            this.Q = 0.0f;
         }
     }
 }
