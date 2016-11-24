@@ -322,29 +322,26 @@ namespace Assets.Scripts
             if (this.draw)
             {
                 //draw the current Solution Path if any (for debug purposes)
+
                 if (this.currentSolution != null)
                 {
-                    var previousPosition = this.startPosition;
-                    //foreach (var pathPosition in this.currentSolution.PathPositions)
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawSphere(this.currentSolution.PathPositions[this.currentSolution.PathPositions.Count - 1], 6.0f);
+                    
+                    //var previousPosition = this.startPosition;
+                    //foreach (var pathPosition in this.currentSmoothedSolution.PathPositions)
                     //{
-                    //    Debug.DrawLine(previousPosition, pathPosition, Color.red);
+                    //    Debug.DrawLine(previousPosition, pathPosition, Color.green);
                     //    previousPosition = pathPosition;
                     //}
-
-                    previousPosition = this.startPosition;
-                    foreach (var pathPosition in this.currentSmoothedSolution.PathPositions)
-                    {
-                        Debug.DrawLine(previousPosition, pathPosition, Color.green);
-                        previousPosition = pathPosition;
-                    }
                 }
 
-                Gizmos.color = Color.yellow;
+                
                 //draw the target for the follow path movement
-                if (this.Character.Movement != null)
-                {
-                    Gizmos.DrawSphere(this.Character.Movement.Target.position, 1.0f);
-                }
+                //if (this.Character.Movement != null)
+                //{
+                //    Gizmos.DrawSphere(this.Character.Movement.Target.position, 1.0f);
+                //}
             }
         }
     }
