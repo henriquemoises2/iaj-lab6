@@ -2,7 +2,6 @@
 using Assets.Scripts.IAJ.Unity.Utils;
 using RAIN.Navigation.Graph;
 using UnityEngine;
-using System;
 
 namespace Assets.Scripts.IAJ.Unity.Pathfinding.Path
 {
@@ -11,7 +10,6 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.Path
         public List<NavigationGraphNode> PathNodes { get; protected set; }
         public List<Vector3> PathPositions { get; protected set; } 
         public bool IsPartial { get; set; }
-        public float Length { get; set; }
         public List<LocalPath> LocalPaths { get; protected set; } 
 
 
@@ -24,45 +22,62 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.Path
 
         public void CalculateLocalPathsFromPathPositions(Vector3 initialPosition)
         {
-            Vector3 previousPosition = initialPosition;
-            for (int i = 0; i < this.PathPositions.Count; i++)
+            this.Length = 0;
+            Vector3 previousPosition = this.PathPositions[0];
+            LineSegmentPath lineSegment;
+            int init;
+            if (this.PathPositions.Count == 1)
+            {
+                init = 0;
+                previousPosition = initialPosition;
+            }
+            else
+                init = 1;
+            for (int i = init; i < this.PathPositions.Count; i++)
             {
 
-                if (!previousPosition.Equals(this.PathPositions[i]))
-                {
-                    this.LocalPaths.Add(new LineSegmentPath(previousPosition, this.PathPositions[i]));
-                    previousPosition = this.PathPositions[i];
-                }
+				if(!previousPosition.Equals(this.PathPositions[i]))
+				{
+                    lineSegment = new LineSegmentPath(previousPosition, this.PathPositions[i], this.Length);
+                    if(lineSegment.Length > 0)
+                    {
+                        this.LocalPaths.Add(lineSegment);
+                        this.Length += lineSegment.Length;
+                        previousPosition = this.PathPositions[i];
+                    }
+				}
             }
         }
 
         public override float GetParam(Vector3 position, float previousParam)
         {
-			float postion = (float) Math.Truncate (previousParam);
-			int pos = (int) postion;
-			LocalPath currentPath = this.LocalPaths [pos];
-			return currentPath.GetParam (position, previousParam);
+            foreach(var localPath in this.LocalPaths)
+            {
+                if(previousParam < localPath.EndParam)
+                {
+                    return localPath.GetParam(position, previousParam);
+                }
+            }
+
+            return this.LocalPaths[this.LocalPaths.Count - 1].GetParam(position, previousParam);
         }
 
         public override Vector3 GetPosition(float param)
         {
-			float postionInt = (float) Math.Truncate (param);
-			int pos = (int) postionInt;
-			LocalPath currentPath = this.LocalPaths [pos];
-			return currentPath.GetPosition (param);
+            foreach (var localPath in this.LocalPaths)
+            {
+                if (param < localPath.EndParam)
+                {
+                    return localPath.GetPosition(param);
+                }
+            }
+
+            return this.LocalPaths[this.LocalPaths.Count - 1].GetPosition(param);
         }
 
         public override bool PathEnd(float param)
         {
-			bool result = false;
-			int position = (int) Math.Truncate (param);
-			int count = this.LocalPaths.Count - 1;
-			if (position < count)
-				result = false;
-			else
-				return true;
-			LocalPath path = this.LocalPaths [position];
-			return result && path.PathEnd(param);
+            return (this.Length - param) <= MathConstants.EPSILON;
         }
     }
 }

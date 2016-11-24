@@ -47,14 +47,14 @@ namespace Assets.Scripts.DecisionMakingActions
         public override bool CanExecute()
         {
             if (!base.CanExecute()) return false;
-            return this.Character.GameManager.characterData.HP > 2;
+            return this.Character.GameManager.characterData.HP + this.hpChange > 0;
         }
 
         public override bool CanExecute(WorldModel worldModel)
         {
             if (!base.CanExecute(worldModel)) return false;
             var hp = (int)worldModel.GetProperty(Properties.HP);
-            return hp > 2;
+            return hp + this.hpChange > 0;
         }
 
         public override void Execute()
@@ -68,7 +68,7 @@ namespace Assets.Scripts.DecisionMakingActions
             base.ApplyActionEffects(worldModel);
 
             var xpValue = worldModel.GetGoalValue(AutonomousCharacter.GAIN_XP_GOAL);
-			worldModel.SetGoalValue(AutonomousCharacter.GAIN_XP_GOAL,xpValue-this.xpChange);
+			worldModel.SetGoalValue(AutonomousCharacter.GAIN_XP_GOAL, xpValue-this.xpChange);
 
             var surviveValue = worldModel.GetGoalValue(AutonomousCharacter.SURVIVE_GOAL);
             worldModel.SetGoalValue(AutonomousCharacter.SURVIVE_GOAL,surviveValue-this.hpChange);

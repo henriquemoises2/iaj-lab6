@@ -47,17 +47,49 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.GOB
         public Action ChooseAction()
         {
             var processedActions = 0;
+            var combinations = 0;
 
             var startTime = Time.realtimeSinceStartup;
 
+            float bestValue = float.MaxValue;
+            while(CurrentDepth >= 0)
+            {
+                if(CurrentDepth >= MAX_DEPTH)
+                {
+                    var currentValue = Models[CurrentDepth].CalculateDiscontentment(Goals);
+                    if(currentValue < bestValue)
+                    {
+                        bestValue = currentValue;
+                        BestAction = ActionPerLevel[0];
+                        BestDiscontentmentValue = currentValue;
+                        ActionPerLevel.CopyTo(BestActionSequence, 0);
+                    }
+                    CurrentDepth -= 1;
+                    combinations += 1;
+                    TotalActionCombinationsProcessed += 1;
+                    continue;
+                }
 
-			WorldModel copy = this.InitialWorldModel.GenerateChildWorldModel ();
-			this.BestAction = copy.GetNextAction ();
-			if (this.BestAction != null)
-				this.BestAction.ApplyActionEffects (copy);
+                //if (combinations >= ActionCombinationsProcessedPerFrame) return this.BestAction;
+
+                var NextAction = Models[CurrentDepth].GetNextAction();
+                if (NextAction != null)
+                {
+                    Models[CurrentDepth + 1] = Models[CurrentDepth].GenerateChildWorldModel();
+                    NextAction.ApplyActionEffects(Models[CurrentDepth + 1]);
+                    ActionPerLevel[CurrentDepth] = NextAction;
+                    CurrentDepth += 1;
+                    processedActions += 1;
+                }
+                else
+                {
+                    CurrentDepth -= 1;
+                }
+            }
 
             this.TotalProcessingTime += Time.realtimeSinceStartup - startTime;
             this.InProgress = false;
+
             return this.BestAction;
         }
     }

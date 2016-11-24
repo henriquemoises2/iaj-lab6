@@ -5,6 +5,10 @@ namespace Assets.Scripts.IAJ.Unity.Pathfinding.Path
     public abstract class Path
     {
         /// <summary>
+        /// Gets the length or size of the path
+        /// </summary>
+        public float Length { get; set; }
+        /// <summary>
         /// Gets the param value (a value that represents how far from the beggining are we in the path) in the path closer to the specified position
         /// </summary>
         /// <param name="position">the position which will be used to determined the closest Param</param>

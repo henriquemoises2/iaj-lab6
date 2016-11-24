@@ -7,22 +7,33 @@ namespace Assets.Scripts.DecisionMakingActions
 {
     public class GetHealthPotion : WalkToTargetAndExecuteAction
     {
+        private int hpChange;
+
         public GetHealthPotion(AutonomousCharacter character, GameObject target) : base("GetHealthPotion",character,target)
         {
+            this.hpChange = this.Character.GameManager.characterData.MaxHP - this.Character.GameManager.characterData.HP;
+        }
+
+        public override float GetGoalChange(Goal goal)
+        {
+            var change = base.GetGoalChange(goal);
+            if (goal.Name == AutonomousCharacter.SURVIVE_GOAL)
+                change += -hpChange;
+            return change;
         }
 
         public override bool CanExecute()
         {
 			if (!base.CanExecute()) return false;
-			return this.Character.GameManager.characterData.HP <= 5;
+			return this.Character.GameManager.characterData.HP < this.Character.GameManager.characterData.MaxHP;
         }
 
         public override bool CanExecute(WorldModel worldModel)
         {
 			if (!base.CanExecute(worldModel)) return false;
-
 			var hp = (int)worldModel.GetProperty(Properties.HP);
-			return hp <= 5;
+            var maxhp = (int)worldModel.GetProperty(Properties.MAXHP);
+            return hp < maxhp;
         }
 
         public override void Execute()

@@ -64,7 +64,7 @@ namespace Assets.Scripts
         public void Initialize(NavMeshPathGraph navMeshGraph, AStarPathfinding pathfindingAlgorithm)
         {
             this.MCTSActive = true; //change this if you want to try DL-GOAP
-            this.draw = false;
+            this.draw = true;
             this.navMesh = navMeshGraph;
             this.AStarPathFinding = pathfindingAlgorithm;
             this.AStarPathFinding.NodesPerSearch = 100;
@@ -232,14 +232,7 @@ namespace Assets.Scripts
                     this.startPosition = this.Character.KinematicData.position;
                     this.currentSmoothedSolution = StringPullingPathSmoothing.SmoothPath(this.Character.KinematicData, this.currentSolution);
                     this.currentSmoothedSolution.CalculateLocalPathsFromPathPositions(this.Character.KinematicData.position);
-                    //this.Character.Movement = new DynamicFollowPath(this.Character.KinematicData,this.currentSmoothedSolution)
-                    this.Character.Movement = new DynamicFollowPath()
-                    {
-                        Character = this.Character.KinematicData,
-                        Path = this.currentSmoothedSolution,
-                        MaxAcceleration = 40.0f,
-                        MaxSpeed = 20.0f
-                    };
+                    this.Character.Movement = new DynamicFollowPath(this.Character.KinematicData, this.currentSmoothedSolution);
                 }
             }
 
@@ -318,6 +311,37 @@ namespace Assets.Scripts
             {
                 this.AStarPathFinding.InitializePathfindingSearch(this.Character.KinematicData.position, targetPosition);
                 this.previousTarget = targetPosition;
+            }
+        }
+
+        public void OnDrawGizmos()
+        {
+            if (this.draw)
+            {
+                //draw the current Solution Path if any (for debug purposes)
+                if (this.currentSolution != null)
+                {
+                    var previousPosition = this.startPosition;
+                    //foreach (var pathPosition in this.currentSolution.PathPositions)
+                    //{
+                    //    Debug.DrawLine(previousPosition, pathPosition, Color.red);
+                    //    previousPosition = pathPosition;
+                    //}
+
+                    previousPosition = this.startPosition;
+                    foreach (var pathPosition in this.currentSmoothedSolution.PathPositions)
+                    {
+                        Debug.DrawLine(previousPosition, pathPosition, Color.green);
+                        previousPosition = pathPosition;
+                    }
+                }
+
+                Gizmos.color = Color.yellow;
+                //draw the target for the follow path movement
+                if (this.Character.Movement != null)
+                {
+                    Gizmos.DrawSphere(this.Character.Movement.Target.position, 1.0f);
+                }
             }
         }
     }
