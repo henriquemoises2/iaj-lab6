@@ -101,7 +101,7 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
                 node = BestChild(node);
             }
 
-           return this.BestFirstChild.Action;
+            return this.BestFirstChild.Action;
         }
 
         private MCTSNode Selection(MCTSNode initialNode)
