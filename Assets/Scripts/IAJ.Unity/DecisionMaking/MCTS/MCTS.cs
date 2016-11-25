@@ -1,4 +1,5 @@
-﻿using Assets.Scripts.IAJ.Unity.DecisionMaking.GOB;
+﻿using Assets.Scripts.GameManager;
+using Assets.Scripts.IAJ.Unity.DecisionMaking.GOB;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -30,7 +31,6 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
 
         public MCTS(CurrentStateWorldModel currentStateWorldModel)
         {
-
             // Initializes the MTCS class with the current game state
             // This will be used to create the root node 
             this.InProgress = false;
@@ -50,7 +50,6 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
             this.TotalProcessingTime = 0.0f;
             this.CurrentStateWorldModel.Initialize();
 
-            // The root node is created
             this.InitialNode = new MCTSNode(this.CurrentStateWorldModel)
             {
                 Action = null,
@@ -62,100 +61,102 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
             // No best child node nor action sequence at this point. They will be added during the algorithm execution
             this.BestFirstChild = null;
             this.BestActionSequence = new List<GOB.Action>();
-            
-            //while (/*whitin computation budget*/  this.CurrentIterations < this.MaxIterations )
-            //{
-            //    MCTSNode nextNode = Selection(this.InitialNode);
-            //    Reward reward = Playout(nextNode.State);
-            //    Backpropagate(nextNode, reward);
-            //}
-
-            //this.InitialNode.Action = this.CurrentStateWorldModel.GetExecutableActions()[RandomGenerator.Next(0, this.CurrentStateWorldModel.GetExecutableActions().Length - 1)];
-            //Debug.Log(this.InitialNode.Action.ToString());
         }
 
-        // Runs at each Update()
         public GOB.Action Run()
         {
+            MCTSNode selectedNode;
+            Reward reward;
+            this.CurrentIterationsInFrame = 0;
+            var startTime = Time.realtimeSinceStartup;
+            
+
             // This will be used to limit the time and memory used in the search. 
-            if (this.CurrentIterations < this.MaxIterations)
+            while (this.CurrentIterationsInFrame < this.MaxIterationsProcessedPerFrame && this.CurrentIterations < this.MaxIterations)
             {
-                MCTSNode selectedNode;
-                Reward reward;
-
-                var startTime = Time.realtimeSinceStartup;
-                this.CurrentIterationsInFrame = 0;
-
-                // Selection: Expands the child nodes and drills through the best child until a terminal state is reached.
+                // Selection: Select best node for the playout fase.
                 selectedNode = Selection(this.InitialNode);
+
                 // Playout: Drills randomly until a final state is achieved
                 reward = Playout(selectedNode.State);
+                
                 // Backpropagate: Updates all the parent nodes until the root with the value obtained in the Playout phase 
                 Backpropagate(selectedNode, reward);
-                // Returns the action associated with the best child
-                return this.BestFirstChild.Action;
+                this.CurrentIterations += 1;
+                this.CurrentIterationsInFrame += 1;
             }
-            else
-            {
-                return this.InitialNode.Action;
-            }
-                
+            this.TotalProcessingTime += Time.realtimeSinceStartup - startTime;
+
+            if (this.CurrentIterations >= this.MaxIterations)
+                this.InProgress = false;
+
+            //this.BestActionSequence.Clear();
+            //MCTSNode node = InitialNode;
+            //while (true)
+            //{
+            //    if (node.State.IsTerminal())
+            //        break;
+            //    BestActionSequence.Add(node.Action);
+            //    node = BestChild(node);
+            //}
+
+            this.BestFirstChild = BestChild(InitialNode);
+            
+            //this.BestActionSequence.Add(this.BestFirstChild.Parent.Action);
+            //Debug.Log(BestActionSequence.Count);
+            //Debug.Log(BestFirstChild.Action.Name);
+            return this.BestFirstChild.Action;
         }
 
         private MCTSNode Selection(MCTSNode initialNode)
         {
-            // GOB.Action nextAction;
-            MCTSNode currentNode = initialNode;
-            bool firstChild = true;
-
-            // Drills until a terminal state is found
-            while (!currentNode.State.IsTerminal())
+            var node = initialNode;
+            int selectionReach = 0;
+            while (!node.State.IsTerminal())
             {
-                foreach (var action in currentNode.State.GetExecutableActions())
+                if (node.ChildNodes.Count < node.State.GetExecutableActions().Length)
                 {
-                    // Expands each executable action
-                    Expand(currentNode, action);
+                    return Expand(node, node.State.GetNextAction());
                 }
-
-                //Updates the next chosen node (to choose the next action)
-                if (firstChild)
+                else
                 {
-                    this.BestFirstChild = currentNode;
-                    firstChild = false; 
+                    selectionReach += 1;
+                    node = BestUCTChild(node);
                 }
-
-                // Drills through the best child of the current node
-                currentNode = BestUCTChild(currentNode);
-                this.BestActionSequence.Add(currentNode.Action);
-                this.MaxSelectionDepthReached++;
             }
-            
-            return currentNode;
-                
+            if (selectionReach > MaxPlayoutDepthReached)
+                MaxPlayoutDepthReached = selectionReach;
+
+            return node;
         }
 
         private Reward Playout(WorldModel initialPlayoutState)
         {
-            WorldModel currentState = initialPlayoutState;
+            //Debug.Log("Playout MCTS");
+            WorldModel roll = initialPlayoutState.GenerateChildWorldModel();
+
+            int playoutReach = 0;
             // Drills randomly (through a random child) until a terminal state is achieved
-            while (!currentState.IsTerminal())
+            while (!roll.IsTerminal())
             {
                 // Gets a random action
-                GOB.Action action = currentState.GetExecutableActions()[RandomGenerator.Next(0, currentState.GetExecutableActions().Length - 1)];
-                action.ApplyActionEffects(currentState);
-                this.MaxPlayoutDepthReached++;
+                GOB.Action action = roll.GetExecutableActions()[RandomGenerator.Next(0, roll.GetExecutableActions().Length - 1)];
+                action.ApplyActionEffects(roll);
+                playoutReach += 1;
             }
 
-            this.CurrentIterations++;
+            if (playoutReach > MaxPlayoutDepthReached)
+                MaxPlayoutDepthReached = playoutReach;
 
             // Gets the reward of that branch (the Score of that reached final state) 
             Reward reward = new Reward();
-            reward.Value = currentState.GetScore();
+            reward.Value = roll.GetScore();
             return reward;
         }
 
         private void Backpropagate(MCTSNode node, Reward reward)
         {
+            //Debug.Log("Backpropagating MCTS");
             // Drills up and updates each parent until the root with the reward value of the final node
             while (node != null)
             {
@@ -167,12 +168,11 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
 
         private MCTSNode Expand(MCTSNode parent, GOB.Action action)
         {
-            // Creates a new node by aplying an action to a state
-            MCTSNode parentNodeCopy = parent;
-            action.ApplyActionEffects(parentNodeCopy.State);
-            MCTSNode child = new MCTSNode(parentNodeCopy.State);
-            // Adds references to the parent
+            WorldModel futureState = parent.State.GenerateChildWorldModel();
+            action.ApplyActionEffects(futureState);
+            MCTSNode child = new MCTSNode(futureState);
             child.Parent = parent;
+            child.Action = action;
             parent.ChildNodes.Add(child);
             return child;
         }
@@ -180,17 +180,18 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
         //gets the best child of a node, using the UCT formula
         private MCTSNode BestUCTChild(MCTSNode node)
         {
-            MCTSNode bestChild = node.ChildNodes[0];
+            MCTSNode bestChild = null;
             double UCTValue, MaxUCTValue = 0;
+
             foreach (MCTSNode child in node.ChildNodes)
             {
-                UCTValue = child.State.GetScore() + C * Math.Sqrt(Math.Log((node.N != 0 ? node.N : 1))/ (node.Parent.N != 0 ? node.Parent.N : 1)); // Hammered because couldn't figure out how a node was already visited
+                UCTValue = child.Q + C * Math.Sqrt(Math.Log(child.Parent.N) / node.N);
 
-                if(UCTValue > MaxUCTValue)
+                if (UCTValue > MaxUCTValue)
                 {
                     bestChild = child;
                     MaxUCTValue = UCTValue;
-                }                
+                }
             }
             return bestChild;
         }
@@ -199,20 +200,20 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
         //the exploration factor
         private MCTSNode BestChild(MCTSNode node)
         {
-            //float max = 0;
-            //MCTSNode retChild = node;
+            MCTSNode bestChild = null;
+            double UCTValue, MaxUCTValue = 0;
 
-            //foreach (MCTSNode child in node.ChildNodes) {
-            //    if (child.Q > max)
-            //    {
-            //        max = child.Q;
-            //        retChild = child;
-            //        Debug.Log(child.ToString());
-            //    }
-            //}
-            //Debug.Log(retChild.ToString());
-            //return retChild;
-            throw new NotImplementedException();
+            foreach (MCTSNode child in node.ChildNodes)
+            {
+                UCTValue = child.Q + Math.Sqrt(Math.Log(child.Parent.N) / node.N);
+
+                if (UCTValue > MaxUCTValue)
+                {
+                    bestChild = child;
+                    MaxUCTValue = UCTValue;
+                }
+            }
+            return bestChild;
         }
     }
 }
