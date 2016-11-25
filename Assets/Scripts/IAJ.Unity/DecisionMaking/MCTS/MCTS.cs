@@ -90,22 +90,18 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
             if (this.CurrentIterations >= this.MaxIterations)
                 this.InProgress = false;
 
-            //this.BestActionSequence.Clear();
-            //MCTSNode node = InitialNode;
-            //while (true)
-            //{
-            //    if (node.State.IsTerminal())
-            //        break;
-            //    BestActionSequence.Add(node.Action);
-            //    node = BestChild(node);
-            //}
-
             this.BestFirstChild = BestChild(InitialNode);
-            
-            //this.BestActionSequence.Add(this.BestFirstChild.Parent.Action);
-            //Debug.Log(BestActionSequence.Count);
-            //Debug.Log(BestFirstChild.Action.Name);
-            return this.BestFirstChild.Action;
+            this.BestActionSequence.Clear();
+            var node = this.BestFirstChild;
+            while(true)
+            {
+                if (node == null || node.State.IsTerminal())
+                    break;
+                this.BestActionSequence.Add(node.Action);
+                node = BestChild(node);
+            }
+
+           return this.BestFirstChild.Action;
         }
 
         private MCTSNode Selection(MCTSNode initialNode)
@@ -124,8 +120,8 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
                     node = BestUCTChild(node);
                 }
             }
-            if (selectionReach > MaxPlayoutDepthReached)
-                MaxPlayoutDepthReached = selectionReach;
+            if (selectionReach > MaxSelectionDepthReached)
+                MaxSelectionDepthReached = selectionReach;
 
             return node;
         }
