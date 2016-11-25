@@ -254,9 +254,9 @@ namespace Assets.Scripts
             }
 
             this.TotalProcessingTimeText.text = "Process. Time: " + this.MCTSDecisionMaking.TotalProcessingTime.ToString("F");
-            this.ProcessedActionsText.text = "Max Depth: " + this.MCTSDecisionMaking.MaxPlayoutDepthReached.ToString();
-            this.MaxPlayoutReached.text = "Max Playout: " + this.MCTSDecisionMaking.MaxPlayoutDepthReached.ToString();
-            this.MaxSelectionReached.text = "Max Selection: " + this.MCTSDecisionMaking.MaxSelectionDepthReached.ToString();
+            this.ProcessedActionsText.text = "Max Selection Depth: " + this.MCTSDecisionMaking.MaxSelectionDepthReached.ToString();
+            this.MaxPlayoutReached.text = "Max Playout Depth: " + this.MCTSDecisionMaking.MaxPlayoutDepthReached.ToString();
+            //this.MaxSelectionReached.text = "Max Selection: " + this.MCTSDecisionMaking.MaxSelectionDepthReached.ToString();
 
             if (this.MCTSDecisionMaking.BestFirstChild != null)
             {
