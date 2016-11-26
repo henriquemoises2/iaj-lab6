@@ -8,7 +8,7 @@ namespace Assets.Scripts.DecisionMakingActions
     public class Fireball : WalkToTargetAndExecuteAction
     {
         private int xpChange;
-
+        private int manaChange;
         public Fireball(AutonomousCharacter character, GameObject target) : base("Fireball",character,target)
         {
 			if (target.tag.Equals("Skeleton"))
@@ -23,6 +23,7 @@ namespace Assets.Scripts.DecisionMakingActions
 			{
 				this.xpChange = 15;
 			}
+            this.manaChange = -5;
         }
 
         public override float GetGoalChange(Goal goal)
@@ -63,9 +64,11 @@ namespace Assets.Scripts.DecisionMakingActions
 			var xp = (int)worldModel.GetProperty(Properties.XP);
 			worldModel.SetProperty(Properties.XP, xp + this.xpChange);
 
+            var mana = (int)worldModel.GetProperty(Properties.MANA);
+            worldModel.SetProperty(Properties.MANA, mana + this.manaChange);
 
-			//disables the target object so that it can't be reused again
-			worldModel.SetProperty(this.Target.name,false);
+            //disables the target object so that it can't be reused again
+            worldModel.SetProperty(this.Target.name,false);
         }
     }
 }
