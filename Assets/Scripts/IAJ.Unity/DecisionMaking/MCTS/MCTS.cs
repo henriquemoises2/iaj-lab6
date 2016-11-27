@@ -177,11 +177,11 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
         private MCTSNode BestUCTChild(MCTSNode node)
         {
             MCTSNode bestChild = null;
-            double UCTValue, MaxUCTValue = 0;
+            double UCTValue, MaxUCTValue = float.MinValue;
 
             foreach (MCTSNode child in node.ChildNodes)
             {
-                UCTValue = child.Q + C * Math.Sqrt(Math.Log(child.Parent.N) / node.N);
+                UCTValue = child.Q/child.N + C * Math.Sqrt(Math.Log(child.Parent.N) / node.N);
 
                 if (UCTValue > MaxUCTValue)
                 {
@@ -197,11 +197,11 @@ namespace Assets.Scripts.IAJ.Unity.DecisionMaking.MCTS
         private MCTSNode BestChild(MCTSNode node)
         {
             MCTSNode bestChild = null;
-            double UCTValue, MaxUCTValue = 0;
+            double UCTValue, MaxUCTValue = float.MinValue;
 
             foreach (MCTSNode child in node.ChildNodes)
             {
-                UCTValue = child.Q + Math.Sqrt(Math.Log(child.Parent.N) / node.N);
+                UCTValue = child.Q/child.N + Math.Sqrt(Math.Log(child.Parent.N) / node.N);
 
                 if (UCTValue > MaxUCTValue)
                 {
